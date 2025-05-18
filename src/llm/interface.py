@@ -33,6 +33,9 @@ class LLMInterface:
         if provider == "openai":
             from .providers.openai import OpenAIProvider
             self.provider_instance = OpenAIProvider(model)
+        elif provider == "nvidia": 
+            from .providers.nvidia import NVIDIAProvider
+            self.provider_instance = NVIDIAProvider(model)
         else:
             raise ValueError(f"Unsupported provider: {provider}")
         

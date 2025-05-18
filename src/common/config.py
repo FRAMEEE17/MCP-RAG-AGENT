@@ -20,6 +20,10 @@ class OpenAIConfig(BaseModel):
 #     """Anthropic API configuration."""
 #     api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
 
+class NVIDIAConfig(BaseModel):
+    """NVIDIA API configuration."""
+    api_key: str = os.getenv("NVIDIA_API_KEY", "")
+
 class LoggingConfig(BaseModel):
     """Logging configuration."""
     level: str = os.getenv("LOG_LEVEL", "INFO")
@@ -29,7 +33,7 @@ class Config(BaseModel):
     server: ServerConfig = ServerConfig()
     openai: OpenAIConfig = OpenAIConfig()
     # anthropic: AnthropicConfig = AnthropicConfig()
+    nvidia: NVIDIAConfig = NVIDIAConfig()  
     logging: LoggingConfig = LoggingConfig()
-
 # Create a global config instance
 config = Config()

@@ -34,6 +34,8 @@ class Agent:
         provider = "openai"
         if self.model.startswith("claude"):
             provider = "anthropic"
+        elif self.model.startswith("nvidia/"):  
+            provider = "nvidia"
         
         # Initialize the LLM with tools
         self.llm = LLMInterface(
