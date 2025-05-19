@@ -27,3 +27,4 @@ httpx
 # mkdocs-material
 langgraph
 faiss-cpu
+fastmcp

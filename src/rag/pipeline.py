@@ -10,7 +10,7 @@ class EmbeddingRetriever:
     """Simple RAG retriever using embeddings."""  
     def __init__(
         self,
-        model_name: str = "text-embedding-3-small",
+        model_name: str = "baai/bge-m3",
         vector_store: Optional[FAISSVectorStore] = None,
         dimension: int = 1024
     ):
@@ -86,7 +86,7 @@ class EmbeddingRetriever:
     async def load(
         cls,
         path: str,
-        model_name: str = "text-embedding-3-small"
+        model_name: str = "baai/bge-m3"
     ) -> 'EmbeddingRetriever':
         """Load a retriever from disk."""
         # Load vector store
@@ -101,7 +101,7 @@ class EmbeddingRetriever:
 class SimpleRAG:
     def __init__(
         self,
-        model_name: str = "text-embedding-3-small",
+        model_name: str = "baai/bge-m3",
         vector_store_path: Optional[str] = None
     ):
         self.retriever = None

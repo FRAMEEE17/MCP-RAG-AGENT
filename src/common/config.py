@@ -24,6 +24,14 @@ class NVIDIAConfig(BaseModel):
     """NVIDIA API configuration."""
     api_key: str = os.getenv("NVIDIA_API_KEY", "")
 
+class BraveSearchConfig(BaseModel):
+    """Brave Search API configuration."""
+    api_key: str = os.getenv("BRAVE_SEARCH_KEY", "")
+
+class GoogleMapsConfig(BaseModel):
+    """Google Maps API configuration."""
+    api_key: str = os.getenv("GOOGLE_MAPS_KEY", "")
+    
 class LoggingConfig(BaseModel):
     """Logging configuration."""
     level: str = os.getenv("LOG_LEVEL", "INFO")
@@ -34,6 +42,9 @@ class Config(BaseModel):
     openai: OpenAIConfig = OpenAIConfig()
     # anthropic: AnthropicConfig = AnthropicConfig()
     nvidia: NVIDIAConfig = NVIDIAConfig()  
+    brave_search: BraveSearchConfig = BraveSearchConfig()
+    google_maps: GoogleMapsConfig = GoogleMapsConfig()
     logging: LoggingConfig = LoggingConfig()
-# Create a global config instance
+
+
 config = Config()

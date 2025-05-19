@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Demo - OpenWebUI</title>
+    <!-- Load the original OpenWebUI scripts -->
+    <script src="openwebui-config.js"></script>
+    <!-- Load our custom MCP integration -->
+    <script src="mcp-integration.js"></script>
+    <style>
+        /* Add custom styles for tool call visualization */
+        .tool-call {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 0.25rem;
+        }
+        .tool-name {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .tool-args {
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script>
+        // Wait for OpenWebUI to initialize
+        document.addEventListener('openwebui:ready', () => {
+            console.log('OpenWebUI is ready, initializing MCP integration');
+            
+            // Register custom message handler to visualize tool calls
+            window.mcpIntegration.onMessage((data) => {
+                if (data.type === 'tool_call') {
+                    // Create a nice visualization of the tool call
+                    const toolCallElement = document.createElement('div');
+                    toolCallElement.className = 'tool-call';
+                    toolCallElement.innerHTML = `
+                        <div class="tool-name">🛠️ Using tool: ${data.tool}</div>
+                        <div class="tool-args">${syntaxHighlight(data.arguments)}</div>
+                    `;
+                    
+                    // Find the current message container and append
+                    const messageContainer = document.querySelector('.openwebui-current-message');
+                    if (messageContainer) {
+                        messageContainer.appendChild(toolCallElement);
+                    }
+                }
+            });
+        });
+        
+        // Helper function to syntax highlight JSON
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, null, 2);
+            }
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                        return '<span style="color: #7dd3fc;">' + match + '</span>';
+                    } else {
+                        cls = 'string';
+                        return '<span style="color: #86efac;">' + match + '</span>';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                    return '<span style="color: #fb923c;">' + match + '</span>';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                    return '<span style="color: #f87171;">' + match + '</span>';
+                }
+                return '<span style="color: #d4d4d8;">' + match + '</span>';
+            });
+        }
+    </script>
+</body>
+</html>

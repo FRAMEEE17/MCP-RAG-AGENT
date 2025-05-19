@@ -5,21 +5,20 @@ from mcp.types import TextContent
 
 from src.common.logging import logger
 from src.common.utils import ensure_directory
-from src.mcp.server.lifespan import file_lifespan
 
 # Create file operations server
 file_mcp = FastMCP("File-Operations")
 
-# Configure lifespan
-file_mcp.configure_lifespan(file_lifespan)
+# Create a global variable for base_path
+_base_path = Path(os.environ.get("FILE_BASE_PATH", str(Path.cwd())))
 
 @file_mcp.tool()
 async def write_file(path: str, content: str, ctx: Context) -> dict:
     """Write content to a file at the specified path."""
     logger.info(f"File tool: write_file to path: {path}")
     try:
-        base_path = ctx.request_context.lifespan_context.base_path
-        full_path = Path(base_path) / path
+        global _base_path
+        full_path = Path(_base_path) / path
         
         # Ensure directory exists
         ensure_directory(str(full_path.parent))
@@ -43,8 +42,8 @@ async def read_file(path: str, ctx: Context) -> dict:
     """Read content from a file at the specified path."""
     logger.info(f"File tool: read_file from path: {path}")
     try:
-        base_path = ctx.request_context.lifespan_context.base_path
-        full_path = Path(base_path) / path
+        global _base_path
+        full_path = Path(_base_path) / path
         
         if not full_path.exists():
             return {
@@ -65,12 +64,12 @@ async def read_file(path: str, ctx: Context) -> dict:
         }
 
 @file_mcp.tool()
-async def list_files(directory: str = "", ctx: Context) -> dict:
+async def list_files(ctx: Context, directory: str = "") -> dict:
     """List files in a directory."""
     logger.info(f"File tool: list_files in directory: {directory}")
     try:
-        base_path = ctx.request_context.lifespan_context.base_path
-        full_path = Path(base_path) / directory
+        global _base_path
+        full_path = Path(_base_path) / directory
         
         if not full_path.exists() or not full_path.is_dir():
             return {
@@ -78,7 +77,7 @@ async def list_files(directory: str = "", ctx: Context) -> dict:
                 "error": f"Directory not found: {directory}"
             }
         
-        files = [str(f.relative_to(base_path)) for f in full_path.glob("*")]
+        files = [str(f.relative_to(_base_path)) for f in full_path.glob("*")]
         return {
             "success": True,
             "files": files
@@ -90,13 +89,14 @@ async def list_files(directory: str = "", ctx: Context) -> dict:
             "error": str(e)
         }
 
+# Fix the resource definition to match URI parameters exactly
 @file_mcp.resource("file://{path}")
-async def get_file_content(path: str, ctx: Context) -> str:
+async def get_file_content(path: str) -> str:
     """Get content from a file at the specified path as a resource."""
     logger.info(f"File resource: get_file_content from path: {path}")
     try:
-        base_path = ctx.request_context.lifespan_context.base_path
-        full_path = Path(base_path) / path
+        global _base_path
+        full_path = Path(_base_path) / path
         
         if not full_path.exists():
             return f"File not found: {path}"
