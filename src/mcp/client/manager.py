@@ -18,12 +18,17 @@ class MCPClientManager:
         name: str, 
         command: str, 
         args: List[str], 
-        version: str = "0.0.1"
+        version: str = "0.0.1",
+        env: Optional[Dict[str, str]] = None
     ) -> Any:
         """Create and initialize a new stdio MCP client."""
-        client = MCPStdioClient(name, command, args, version)
-        await client.init()
+        client = MCPStdioClient(name, command, args, version, env)
+        success = await client.init()
         
+        if not success:
+            logger.warning(f"Failed to initialize stdio MCP client '{name}'")
+            return None
+            
         self.clients[name] = client
         
         # Register all tools from this client
@@ -41,7 +46,11 @@ class MCPClientManager:
     ) -> Any:
         """Create and initialize a new HTTP MCP client."""
         client = MCPHttpClient(name, url, version)
-        await client.init()
+        success = await client.init()
+        
+        if not success:
+            logger.warning(f"Failed to initialize HTTP MCP client '{name}'")
+            return None
         
         self.clients[name] = client
         

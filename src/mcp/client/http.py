@@ -2,8 +2,7 @@ import os
 import json
 import asyncio
 from typing import List, Dict, Any, Optional
-from mcp.client import Client
-from mcp.client.streamable_http import streamablehttp_client
+import httpx
 
 from src.common.logging import logger
 
@@ -14,9 +13,7 @@ class MCPHttpClient:
         self.name = name
         self.url = url
         self.version = version
-        self.client = Client({"name": name, "version": version})
-        self.read_stream = None
-        self.write_stream = None
+        self.client = httpx.AsyncClient()
         self.session_id = None
         self.tools = []
     
@@ -24,12 +21,35 @@ class MCPHttpClient:
         """Initialize the connection to the MCP server."""
         try:
             # Connect to the MCP server
-            self.read_stream, self.write_stream, self.session_id = await streamablehttp_client(self.url)
-            await self.client.connect(self.read_stream, self.write_stream)
+            response = await self.client.post(
+                f"{self.url}/initialize",
+                json={
+                    "client": {
+                        "name": self.name,
+                        "version": self.version
+                    }
+                }
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to initialize connection to HTTP MCP server '{self.name}': {response.text}")
+                return False
+            
+            init_data = response.json()
+            self.session_id = init_data.get("session_id")
             
             # Get available tools
-            result = await self.client.list_tools()
-            self.tools = result.get("tools", [])
+            tools_response = await self.client.post(
+                f"{self.url}/list_tools",
+                json={}
+            )
+            
+            if tools_response.status_code != 200:
+                logger.error(f"Failed to get tools from HTTP MCP server '{self.name}': {tools_response.text}")
+                return False
+            
+            tools_data = tools_response.json()
+            self.tools = tools_data.get("tools", [])
             
             logger.info(f"Connected to HTTP MCP server '{self.name}' at {self.url} with {len(self.tools)} tools")
             return True
@@ -39,8 +59,7 @@ class MCPHttpClient:
     
     async def close(self):
         """Close the connection to the MCP server."""
-        if self.client:
-            await self.client.close()
+        await self.client.aclose()
     
     def get_tools(self) -> List[Dict[str, Any]]:
         """Get the list of tools provided by this MCP server."""
@@ -50,10 +69,19 @@ class MCPHttpClient:
         """Call a tool with the given parameters."""
         try:
             logger.debug(f"Calling tool '{name}' on HTTP MCP server '{self.name}' with params: {params}")
-            result = await self.client.call_tool({
-                "name": name,
-                "arguments": params
-            })
+            
+            response = await self.client.post(
+                f"{self.url}/call_tool",
+                json={
+                    "name": name,
+                    "arguments": params
+                }
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Failed to call tool: {response.text}")
+            
+            result = response.json()
             return result
         except Exception as e:
             logger.error(f"Error calling tool '{name}' on HTTP MCP server '{self.name}': {str(e)}")
